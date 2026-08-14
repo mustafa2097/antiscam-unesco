@@ -35,7 +35,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setErrors({});
     try {
-      const meRes = await apiFetch("/api/auth/me", { method: "GET" });
+      const meRes = await apiFetch("/api/auth/me", { method: "GET", timeoutMs: 12000 });
       if (meRes.ok) {
         setUser(await parseJsonSafe(meRes));
         return;

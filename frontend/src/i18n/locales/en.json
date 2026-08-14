@@ -1,4 +1,7 @@
 {
+  "common": {
+    "loading": "Loading — the first attempt may take a moment..."
+  },
   "landing": {
     "eyebrow": "Job offer verification",
     "title": "Verify the offer.",

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ScanProvider, useScan } from "./context/ScanContext";
@@ -15,6 +16,7 @@ import { useSectionHashSync } from "./hooks/useSectionHashSync";
 import { getRoute, navigateTo } from "./utils/navigation";
 
 function AppContent() {
+  const { t } = useTranslation();
   const [route, setRoute] = useState(getRoute);
   const { user, loading } = useAuth();
   const { clearScan } = useScan();
@@ -60,7 +62,15 @@ function AppContent() {
   const goRegister = () => navigateTo("/register", { replace: false });
 
   if (loading) {
-    return <div className="min-h-screen bg-white" aria-busy="true" />;
+    return (
+      <div
+        className="flex min-h-screen flex-col items-center justify-center gap-4 bg-paper"
+        aria-busy="true"
+      >
+        <span className="h-9 w-9 animate-spin rounded-full border-2 border-ink/20 border-t-ink" />
+        <p className="text-sm text-ink-muted">{t("common.loading")}</p>
+      </div>
+    );
   }
 
   return (

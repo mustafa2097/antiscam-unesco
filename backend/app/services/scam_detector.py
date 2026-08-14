@@ -67,6 +67,27 @@ LEVEL_STATEMENT = {
 }
 
 
+# Short trait phrases used to describe, in plain words, what the model saw.
+CATEGORY_TRAIT = {
+    "payment": {"en": "a request to pay money up front", "ar": "طلب دفع مال مقدماً"},
+    "urgency": {"en": "pressure to act quickly", "ar": "ضغطاً للتحرّك بسرعة"},
+    "identity": {"en": "an early request for personal documents", "ar": "طلب مستندات شخصية مبكراً"},
+    "income": {"en": "promises of unrealistic income", "ar": "وعوداً بدخل غير واقعي"},
+    "contact": {"en": "a push toward unofficial contact channels", "ar": "توجيهاً لقنوات تواصل غير رسمية"},
+    "general": {"en": "wording similar to known scam ads", "ar": "صياغة تشبه إعلانات النصب المعروفة"},
+}
+
+
+def _join_traits(traits: list[str], *, arabic: bool) -> str:
+    if not traits:
+        return ""
+    if len(traits) == 1:
+        return traits[0]
+    sep = "، " if arabic else ", "
+    last = " و" if arabic else ", and "
+    return sep.join(traits[:-1]) + last + traits[-1]
+
+
 def _build_narrative(
     *,
     risk_level: str,
@@ -76,62 +97,67 @@ def _build_narrative(
     signals: list[dict[str, Any]],
     model_meta: dict[str, Any],
 ) -> dict[str, str]:
-    """Build a human-readable explanation of why the model produced this score."""
+    """Build a human-readable, number-free explanation of why the score was given."""
     reasons_en: list[str] = []
     reasons_ar: list[str] = []
 
     level = LEVEL_STATEMENT.get(risk_level, LEVEL_STATEMENT["safe"])
-    parts_en = [f"{level['en']} We estimated a {final_pct}% scam probability."]
-    parts_ar = [f"{level['ar']} قدّرنا احتمال الاحتيال بنسبة {final_pct}%."]
 
-    if ml_available:
-        ml_pct = round(ml_probability * 100, 1)
-        if ml_probability >= 0.7:
-            reasons_en.append(
-                "The AI noticed that the way this offer is written strongly matches the patterns of known scam ads."
-            )
-            reasons_ar.append(
-                "لاحظ الذكاء الاصطناعي أن طريقة صياغة هذا العرض تشبه بقوة أنماط إعلانات النصب المعروفة."
-            )
-        elif ml_probability >= 0.4:
-            reasons_en.append(
-                "The AI noticed a clear similarity between the wording of this offer and typical scam ads."
-            )
-            reasons_ar.append(
-                "لاحظ الذكاء الاصطناعي تشابهاً واضحاً بين صياغة هذا العرض وأسلوب إعلانات النصب المعتادة."
-            )
-        else:
-            reasons_en.append(
-                "The AI noticed only a slight similarity between the wording and known scam-ad patterns."
-            )
-            reasons_ar.append(
-                "لاحظ الذكاء الاصطناعي تشابهاً بسيطاً فقط بين الصياغة وأنماط إعلانات النصب المعروفة."
-            )
-    else:
+    # Lead sentence: the model's own read of the text, grounded in what it saw.
+    top_cats = [s["category"] for s in signals[:3]]
+    traits_en = [CATEGORY_TRAIT.get(c, CATEGORY_TRAIT["general"])["en"] for c in top_cats]
+    traits_ar = [CATEGORY_TRAIT.get(c, CATEGORY_TRAIT["general"])["ar"] for c in top_cats]
+
+    if ml_available and top_cats:
+        joined_en = _join_traits(traits_en, arabic=False)
+        joined_ar = _join_traits(traits_ar, arabic=True)
         reasons_en.append(
-            "The offer's wording was checked against known scam warning phrases."
+            f"The model read the text and saw {joined_en} — a combination that repeats in real scam ads."
         )
         reasons_ar.append(
-            "تم فحص صياغة العرض ومقارنتها بعبارات التحذير المعروفة في عمليات النصب."
+            f"قرأ المودل النص ولاحظ أنه يحتوي {joined_ar} — وهو مزيج يتكرر في إعلانات النصب الحقيقية."
+        )
+    elif ml_available and ml_probability >= 0.5:
+        reasons_en.append(
+            "The model read the text and found its overall tone and promises resemble scam ads, "
+            "even without an explicit red-flag phrase."
+        )
+        reasons_ar.append(
+            "قرأ المودل النص ووجد أن نبرته العامة ووعوده تشبه إعلانات النصب، حتى دون وجود عبارة تحذير صريحة."
+        )
+    elif ml_available:
+        reasons_en.append(
+            "The model read the text and found little that resembles typical scam wording."
+        )
+        reasons_ar.append(
+            "قرأ المودل النص ولم يجد الكثير مما يشبه صياغة النصب المعتادة."
+        )
+    else:
+        reasons_en.append(
+            "The text was compared against a list of known scam warning phrases."
+        )
+        reasons_ar.append(
+            "تمت مقارنة النص بقائمة من عبارات التحذير المعروفة في عمليات النصب."
         )
 
-    if signals:
-        for signal in signals[:4]:
-            cat = signal["category"]
-            reason = CATEGORY_REASON.get(cat, CATEGORY_REASON["general"])
-            label_en = signal["label_en"]
-            label_ar = signal["label_ar"]
-            example = signal.get("reasons") or []
-            example_en = f' (e.g. "{example[0]}")' if example else ""
-            example_ar = f' (مثل: "{example[0]}")' if example else ""
-            reasons_en.append(f"{label_en}: {reason['en']}{example_en}.")
-            reasons_ar.append(f"{label_ar}: {reason['ar']}{example_ar}.")
-    else:
-        reasons_en.append("No specific scam warning phrases were matched in the text.")
-        reasons_ar.append("لم تُطابق أي عبارات تحذير احتيال محددة في النص.")
+    # Then explain, per detected category, why that trait is dangerous.
+    for signal in signals[:4]:
+        cat = signal["category"]
+        reason = CATEGORY_REASON.get(cat, CATEGORY_REASON["general"])
+        label_en = signal["label_en"]
+        label_ar = signal["label_ar"]
+        example = signal.get("reasons") or []
+        example_en = f' (e.g. "{example[0]}")' if example else ""
+        example_ar = f' (مثل: "{example[0]}")' if example else ""
+        reasons_en.append(f"{label_en}: {reason['en']}{example_en}.")
+        reasons_ar.append(f"{label_ar}: {reason['ar']}{example_ar}.")
 
-    summary_en = " ".join(parts_en + reasons_en)
-    summary_ar = " ".join(parts_ar + reasons_ar)
+    if not signals and ml_available and ml_probability < 0.5:
+        reasons_en.append("Still, verify the source before sending money or documents.")
+        reasons_ar.append("مع ذلك، تحقّق من المصدر قبل إرسال أي مال أو مستندات.")
+
+    summary_en = " ".join([level["en"]] + reasons_en)
+    summary_ar = " ".join([level["ar"]] + reasons_ar)
 
     return {
         "summary_en": summary_en,

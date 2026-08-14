@@ -298,42 +298,6 @@ export default function ScannerHero() {
                           {isArabic ? breakdown.summary_ar : breakdown.summary_en}
                         </p>
                       )}
-                      <p className="mt-3 text-xs font-medium text-ink-muted">
-                        {isArabic ? breakdown.formula_ar : breakdown.formula_en}
-                      </p>
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {breakdown.ml_contribution_pct != null && breakdown.mode === "blended" ? (
-                        <div className="border border-ink/10 px-3 py-2">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                            {t("scanner.result.mlShare")}
-                          </p>
-                          <p className="mt-1 font-display text-xl font-semibold text-ink">
-                            {breakdown.ml_contribution_pct}%
-                          </p>
-                          <div className="mt-2 h-1 bg-ink/10">
-                            <div
-                              className="h-full bg-[#21384c]"
-                              style={{ width: `${Math.min(breakdown.ml_contribution_pct, 100)}%` }}
-                            />
-                          </div>
-                        </div>
-                      ) : null}
-                      <div className="border border-ink/10 px-3 py-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                          {t("scanner.result.rulesShare")}
-                        </p>
-                        <p className="mt-1 font-display text-xl font-semibold text-ink">
-                          {breakdown.rules_contribution_pct}%
-                        </p>
-                        <div className="mt-2 h-1 bg-ink/10">
-                          <div
-                            className="h-full bg-[#b45b3b]"
-                            style={{ width: `${Math.min(breakdown.rules_contribution_pct, 100)}%` }}
-                          />
-                        </div>
-                      </div>
                     </div>
 
                     {breakdown.signals?.length ? (
@@ -341,42 +305,23 @@ export default function ScannerHero() {
                         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">
                           {t("scanner.result.signalsTitle")}
                         </p>
-                        <ul className="mt-3 space-y-3">
+                        <ul className="mt-3 space-y-2">
                           {breakdown.signals.slice(0, 5).map((signal) => (
-                            <li key={signal.category}>
-                              <div className="flex items-center justify-between gap-3 text-sm">
-                                <span className="font-semibold text-ink">
-                                  {isArabic ? signal.label_ar : signal.label_en}
-                                </span>
-                                <span className="text-ink-muted">{signal.strength_pct}%</span>
-                              </div>
-                              <div className="mt-1.5 h-1 bg-ink/10">
-                                <div
-                                  className="h-full bg-[#b45b3b]"
-                                  style={{ width: `${Math.min(signal.strength_pct, 100)}%` }}
-                                />
-                              </div>
+                            <li key={signal.category} className="text-sm">
+                              <span className="font-semibold text-ink">
+                                {isArabic ? signal.label_ar : signal.label_en}
+                              </span>
                               {signal.reasons?.length ? (
-                                <ul className="mt-2 flex flex-wrap gap-1.5">
-                                  {signal.reasons.map((reason) => (
-                                    <li
-                                      key={reason}
-                                      className="border border-ink/12 bg-paper px-2 py-0.5 text-[10px] text-ink-muted"
-                                    >
-                                      {reason}
-                                    </li>
-                                  ))}
-                                </ul>
+                                <span className="text-ink-muted">
+                                  {" — "}
+                                  {signal.reasons.join(isArabic ? "، " : ", ")}
+                                </span>
                               ) : null}
                             </li>
                           ))}
                         </ul>
                       </div>
                     ) : null}
-
-                    <p className="text-xs leading-relaxed text-ink-muted">
-                      {isArabic ? breakdown.disclaimer_ar : breakdown.disclaimer_en}
-                    </p>
                   </div>
                 ) : null}
 
