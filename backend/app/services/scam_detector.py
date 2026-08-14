@@ -86,21 +86,33 @@ def _build_narrative(
 
     if ml_available:
         ml_pct = round(ml_probability * 100, 1)
-        rows = model_meta.get("rows")
-        trained_note_en = f" trained on about {rows:,} real job postings" if rows else ""
-        trained_note_ar = f" المدرّب على نحو {rows:,} إعلان وظيفي حقيقي" if rows else ""
-        reasons_en.append(
-            f"Our AI model{trained_note_en} judged the wording as {ml_pct}% similar to known scams."
-        )
-        reasons_ar.append(
-            f"نموذج الذكاء الاصطناعي{trained_note_ar} رأى أن صياغة النص تشبه الاحتيال المعروف بنسبة {ml_pct}%."
-        )
+        if ml_probability >= 0.7:
+            reasons_en.append(
+                "The AI noticed that the way this offer is written strongly matches the patterns of known scam ads."
+            )
+            reasons_ar.append(
+                "لاحظ الذكاء الاصطناعي أن طريقة صياغة هذا العرض تشبه بقوة أنماط إعلانات النصب المعروفة."
+            )
+        elif ml_probability >= 0.4:
+            reasons_en.append(
+                "The AI noticed a clear similarity between the wording of this offer and typical scam ads."
+            )
+            reasons_ar.append(
+                "لاحظ الذكاء الاصطناعي تشابهاً واضحاً بين صياغة هذا العرض وأسلوب إعلانات النصب المعتادة."
+            )
+        else:
+            reasons_en.append(
+                "The AI noticed only a slight similarity between the wording and known scam-ad patterns."
+            )
+            reasons_ar.append(
+                "لاحظ الذكاء الاصطناعي تشابهاً بسيطاً فقط بين الصياغة وأنماط إعلانات النصب المعروفة."
+            )
     else:
         reasons_en.append(
-            "The AI model was unavailable, so this score relies only on rule-based warning patterns."
+            "The offer's wording was checked against known scam warning phrases."
         )
         reasons_ar.append(
-            "نموذج الذكاء الاصطناعي غير متاح، لذا اعتمدت النسبة على أنماط التحذير القاعدية فقط."
+            "تم فحص صياغة العرض ومقارنتها بعبارات التحذير المعروفة في عمليات النصب."
         )
 
     if signals:

@@ -48,7 +48,8 @@ def test_scam_breakdown_blended_mode():
     assert "ml_model" in flags
     assert breakdown["summary_en"] and breakdown["summary_ar"]
     assert breakdown["reasons_en"] and breakdown["reasons_ar"]
-    assert any("AI model" in r for r in breakdown["reasons_en"])
+    assert any("AI noticed" in r for r in breakdown["reasons_en"])
+    assert not any("trained on" in r for r in breakdown["reasons_en"])
 
 
 def test_scam_breakdown_rules_only_mode():
