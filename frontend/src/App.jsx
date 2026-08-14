@@ -5,6 +5,7 @@ import { ScanProvider } from "./context/ScanContext";
 import AuthPage from "./components/AuthPage";
 import LandingHeader from "./components/LandingHeader";
 import LandingHero from "./components/LandingHero";
+import GuidesArticles from "./components/GuidesArticles";
 import OpportunitiesGrid from "./components/OpportunitiesGrid";
 import ScanResultDemo from "./components/ScanResultDemo";
 import ScannerHero from "./components/ScannerHero";
@@ -24,7 +25,8 @@ function AppContent() {
   }, []);
 
   const isAuthRoute = route === "/login" || route === "/register";
-  const isPlatformRoute = route === "/scanner" || route === "/opportunities";
+  const isPlatformRoute =
+    route === "/scanner" || route === "/opportunities" || route === "/guides";
 
   useSectionHashSync(Boolean(user) && !isAuthRoute);
 
@@ -62,12 +64,15 @@ function AppContent() {
         <>
           <SiteHeader onLoginClick={goLogin} />
           <main className="relative z-0">
-                <section className="section">
-                  <ScannerHero />
-                </section>
-                <section className="section section--muted">
-                  <OpportunitiesGrid />
-                </section>
+            <section className="section">
+              <ScannerHero />
+            </section>
+            <section className="section section--muted">
+              <OpportunitiesGrid />
+            </section>
+            <section className="section">
+              <GuidesArticles />
+            </section>
           </main>
           <SiteFooter />
         </>

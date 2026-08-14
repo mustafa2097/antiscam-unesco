@@ -10,13 +10,7 @@ export function ScanProvider({ children }) {
     if (!result) return;
     setLastScan(result);
     const role = result?.metadata?.detected_role || null;
-    if (role) {
-      setDetectedRole(role);
-      window.setTimeout(() => {
-        const el = document.getElementById("opportunities");
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
-    }
+    if (role) setDetectedRole(role);
   }, []);
 
   const clearRole = useCallback(() => setDetectedRole(null), []);

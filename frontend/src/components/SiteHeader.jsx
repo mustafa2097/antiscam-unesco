@@ -51,6 +51,13 @@ export default function SiteHeader({ onLoginClick }) {
           >
             {t("opportunities.title")}
           </button>
+          <button
+            type="button"
+            onClick={() => goToSection("guides")}
+            className="transition hover:text-ink"
+          >
+            {t("guides.title")}
+          </button>
         </nav>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3 md:justify-self-end">

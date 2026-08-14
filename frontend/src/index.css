@@ -388,8 +388,75 @@ html[dir="rtl"] .brand-wordmark {
 }
 
 #scanner,
-#opportunities {
+#opportunities,
+#guides {
   scroll-margin-top: 96px;
+}
+
+.opp-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.65rem 0.5rem 0.2rem;
+  border: 0;
+  background: transparent;
+  color: var(--navy);
+  cursor: pointer;
+}
+
+.opp-hint__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(33, 56, 76, 0.82);
+}
+
+html:not([dir="rtl"]) .opp-hint__label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.opp-hint__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid rgba(33, 56, 76, 0.28);
+  background: rgba(251, 250, 247, 0.9);
+  color: var(--navy);
+  font-size: 0.85rem;
+  line-height: 1;
+  animation: opp-hint-bob 1.6s ease-in-out infinite;
+}
+
+.opp-hint:hover .opp-hint__label {
+  color: var(--ink);
+}
+
+.opp-hint:hover .opp-hint__arrow {
+  border-color: rgba(0, 0, 0, 0.45);
+  background: #fff;
+}
+
+@keyframes opp-hint-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opp-hint__arrow {
+    animation: none;
+  }
 }
 
 .nav-glass {

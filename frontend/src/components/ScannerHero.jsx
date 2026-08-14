@@ -257,22 +257,13 @@ export default function ScannerHero() {
                 ) : null}
 
                 {detectedRole ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">
-                        {t("scanner.result.detected")}
-                      </p>
-                      <p className="mt-1 font-display text-lg font-semibold text-ink">
-                        {roleLabel(detectedRole, isArabic)}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => goToSection("opportunities")}
-                      className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink underline-offset-4 hover:underline"
-                    >
-                      {t("scanner.result.seeBelow")} →
-                    </button>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">
+                      {t("scanner.result.detected")}
+                    </p>
+                    <p className="mt-1 font-display text-lg font-semibold text-ink">
+                      {roleLabel(detectedRole, isArabic)}
+                    </p>
                   </div>
                 ) : (
                   <p className="text-sm text-ink-muted">{t("scanner.result.noRole")}</p>
@@ -350,6 +341,17 @@ export default function ScannerHero() {
                     </div>
                   </div>
                 ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => goToSection("opportunities")}
+                  className="opp-hint"
+                >
+                  <span className="opp-hint__label">{t("scanner.result.seeOpportunities")}</span>
+                  <span className="opp-hint__arrow" aria-hidden="true">
+                    ↓
+                  </span>
+                </button>
               </div>
             ) : null}
           </form>

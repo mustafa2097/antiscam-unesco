@@ -52,6 +52,7 @@
     "result": {
       "detected": "Detected role",
       "seeBelow": "See matches",
+      "seeOpportunities": "View available opportunities",
       "noRole": "No role detected.",
       "risk": "Scam probability",
       "saferPaths": "Safer paths in the same field",
@@ -62,6 +63,27 @@
         "medium": "Medium",
         "low": "Low",
         "safe": "Safe"
+      }
+    }
+  },
+  "guides": {
+    "eyebrow": "§ 03 · Guides",
+    "title": "Guides",
+    "items": {
+      "ftcJobScams": {
+        "title": "Job scams: how to spot and avoid them"
+      },
+      "ftcRecruiters": {
+        "title": "Job scammers are looking to hire you"
+      },
+      "consumerGov": {
+        "title": "Job scams explained"
+      },
+      "indeed": {
+        "title": "How to know if a job is a scam"
+      },
+      "scamlens": {
+        "title": "Job fraud: warning signs and protection"
       }
     }
   },

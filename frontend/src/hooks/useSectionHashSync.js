@@ -5,16 +5,19 @@ import { getRoute, navigateTo } from "../utils/navigation";
 const SECTION_PATHS = {
   scanner: "/scanner",
   opportunities: "/opportunities",
+  guides: "/guides",
 };
 
 const HOME_PATHS = new Set(["/", "/scanner"]);
 const HEADER_OFFSET = 96;
 const LINE_BUFFER = 70;
+const SECTION_IDS = ["scanner", "opportunities", "guides"];
 
 let programmaticScrollUntil = 0;
 
 function sectionFromRoute(route) {
   if (route === SECTION_PATHS.opportunities) return "opportunities";
+  if (route === SECTION_PATHS.guides) return "guides";
   if (HOME_PATHS.has(route)) return "scanner";
   return null;
 }
@@ -26,28 +29,29 @@ function visibleArea(rect) {
 }
 
 function resolveSection() {
-  const scanner = document.getElementById("scanner");
-  const opportunities = document.getElementById("opportunities");
-  if (!scanner || !opportunities) return "scanner";
+  const elements = SECTION_IDS.map((id) => document.getElementById(id)).filter(Boolean);
+  if (!elements.length) return "scanner";
 
   const scrollLine = window.scrollY + HEADER_OFFSET + LINE_BUFFER;
-  const oppStart = opportunities.offsetTop;
+  let current = "scanner";
 
-  if (scrollLine < oppStart) {
-    return "scanner";
+  for (const el of elements) {
+    if (scrollLine >= el.offsetTop) current = el.id;
   }
 
-  const scanArea = visibleArea(scanner.getBoundingClientRect());
-  const oppArea = visibleArea(opportunities.getBoundingClientRect());
-  const total = scanArea + oppArea;
+  const areas = Object.fromEntries(
+    SECTION_IDS.map((id) => {
+      const el = document.getElementById(id);
+      return [id, el ? visibleArea(el.getBoundingClientRect()) : 0];
+    }),
+  );
 
-  if (total > 0 && scanArea > 0 && oppArea > 0) {
-    const oppShare = oppArea / total;
-    if (oppShare >= 0.52) return "opportunities";
-    if (oppShare <= 0.48) return "scanner";
+  const ranked = [...SECTION_IDS].sort((a, b) => areas[b] - areas[a]);
+  if (areas[ranked[0]] > 0 && areas[ranked[0]] >= areas[ranked[1]] + 8) {
+    return ranked[0];
   }
 
-  return scrollLine >= oppStart ? "opportunities" : "scanner";
+  return current;
 }
 
 function scrollToSection(section, behavior = "smooth") {
@@ -61,11 +65,10 @@ export function useSectionHashSync(enabled) {
   useEffect(() => {
     if (!enabled) return;
 
-    const scanner = document.getElementById("scanner");
-    const opportunities = document.getElementById("opportunities");
-    if (!scanner || !opportunities) return;
+    const elements = SECTION_IDS.map((id) => document.getElementById(id)).filter(Boolean);
+    if (elements.length < 2) return;
 
-    const visibility = { scanner: 0, opportunities: 0 };
+    const visibility = Object.fromEntries(SECTION_IDS.map((id) => [id, 0]));
     let frame = 0;
 
     const syncHash = () => {
@@ -76,13 +79,9 @@ export function useSectionHashSync(enabled) {
       if (currentRoute === "/login" || currentRoute === "/register") return;
 
       let section = resolveSection();
-
-      const scanVis = visibility.scanner;
-      const oppVis = visibility.opportunities;
-      if (oppVis > scanVis + 0.08) {
-        section = "opportunities";
-      } else if (scanVis > oppVis + 0.08) {
-        section = "scanner";
+      const ranked = [...SECTION_IDS].sort((a, b) => visibility[b] - visibility[a]);
+      if (visibility[ranked[0]] > visibility[ranked[1]] + 0.08) {
+        section = ranked[0];
       }
 
       const nextPath = SECTION_PATHS[section];
@@ -101,7 +100,7 @@ export function useSectionHashSync(enabled) {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.target.id === "scanner" || entry.target.id === "opportunities") {
+          if (SECTION_IDS.includes(entry.target.id)) {
             visibility[entry.target.id] = entry.intersectionRatio;
           }
         });
@@ -111,11 +110,10 @@ export function useSectionHashSync(enabled) {
         root: null,
         rootMargin: `-${HEADER_OFFSET}px 0px -40% 0px`,
         threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
-      }
+      },
     );
 
-    observer.observe(scanner);
-    observer.observe(opportunities);
+    elements.forEach((el) => observer.observe(el));
 
     window.addEventListener("scroll", scheduleSync, { passive: true });
     window.addEventListener("resize", scheduleSync, { passive: true });
