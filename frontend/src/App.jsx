@@ -25,16 +25,23 @@ function AppContent() {
   }, []);
 
   const isAuthRoute = route === "/login" || route === "/register";
+  const isGuidesRoute = route === "/guides";
   const isPlatformRoute =
-    route === "/scanner" || route === "/opportunities" || route === "/guides";
+    route === "/scanner" || route === "/opportunities" || isGuidesRoute;
 
-  useSectionHashSync(Boolean(user) && !isAuthRoute);
+  useSectionHashSync(Boolean(user) && !isAuthRoute && !isGuidesRoute);
 
   useEffect(() => {
     if (!loading && !user && isPlatformRoute) {
       navigateTo("/", { replace: true });
     }
   }, [isPlatformRoute, loading, user]);
+
+  useEffect(() => {
+    if (isGuidesRoute) {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [isGuidesRoute]);
 
   const goPlatform = () => {
     navigateTo("/scanner", { replace: true });
@@ -64,15 +71,20 @@ function AppContent() {
         <>
           <SiteHeader onLoginClick={goLogin} />
           <main className="relative z-0">
-            <section className="section">
-              <ScannerHero />
-            </section>
-            <section className="section section--muted">
-              <OpportunitiesGrid />
-            </section>
-            <section className="section">
-              <GuidesArticles />
-            </section>
+            {isGuidesRoute ? (
+              <section className="section">
+                <GuidesArticles />
+              </section>
+            ) : (
+              <>
+                <section className="section">
+                  <ScannerHero />
+                </section>
+                <section className="section section--muted">
+                  <OpportunitiesGrid />
+                </section>
+              </>
+            )}
           </main>
           <SiteFooter />
         </>

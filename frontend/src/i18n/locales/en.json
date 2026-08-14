@@ -69,6 +69,7 @@
   "guides": {
     "eyebrow": "§ 03 · Guides",
     "title": "Guides",
+    "open": "Open article",
     "items": {
       "ftcJobScams": {
         "title": "Job scams: how to spot and avoid them"
@@ -76,11 +77,14 @@
       "ftcRecruiters": {
         "title": "Job scammers are looking to hire you"
       },
+      "ftcTextScam": {
+        "title": "That job offer text is probably a scam"
+      },
+      "interpol": {
+        "title": "INTERPOL: globalization of scam centres"
+      },
       "consumerGov": {
         "title": "Job scams explained"
-      },
-      "indeed": {
-        "title": "How to know if a job is a scam"
       },
       "scamlens": {
         "title": "Job fraud: warning signs and protection"

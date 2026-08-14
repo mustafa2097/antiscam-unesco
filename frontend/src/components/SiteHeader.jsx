@@ -53,7 +53,10 @@ export default function SiteHeader({ onLoginClick }) {
           </button>
           <button
             type="button"
-            onClick={() => goToSection("guides")}
+            onClick={() => {
+              navigateTo("/guides", { replace: false });
+              window.scrollTo({ top: 0, behavior: "auto" });
+            }}
             className="transition hover:text-ink"
           >
             {t("guides.title")}

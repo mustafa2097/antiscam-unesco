@@ -388,8 +388,7 @@ html[dir="rtl"] .brand-wordmark {
 }
 
 #scanner,
-#opportunities,
-#guides {
+#opportunities {
   scroll-margin-top: 96px;
 }
 
