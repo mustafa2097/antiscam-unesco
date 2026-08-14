@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import { ScanProvider } from "./context/ScanContext";
+import { ScanProvider, useScan } from "./context/ScanContext";
 import AuthPage from "./components/AuthPage";
 import LandingHeader from "./components/LandingHeader";
 import LandingHero from "./components/LandingHero";
@@ -17,6 +17,7 @@ import { getRoute, navigateTo } from "./utils/navigation";
 function AppContent() {
   const [route, setRoute] = useState(getRoute);
   const { user, loading } = useAuth();
+  const { clearScan } = useScan();
 
   useEffect(() => {
     const onHashChange = () => setRoute(getRoute());
@@ -44,8 +45,12 @@ function AppContent() {
   }, [isGuidesRoute]);
 
   const goPlatform = () => {
+    clearScan();
     navigateTo("/scanner", { replace: true });
     window.scrollTo({ top: 0, behavior: "auto" });
+    window.setTimeout(() => {
+      document.getElementById("scan-form")?.scrollIntoView({ behavior: "auto", block: "start" });
+    }, 50);
   };
   const goLanding = () => {
     navigateTo("/", { replace: true });

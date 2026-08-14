@@ -31,6 +31,11 @@ function resolveSection() {
   const opportunities = document.getElementById("opportunities");
   if (!scanner || !opportunities) return "scanner";
 
+  // Keep the verification form first after login / page entry.
+  if (window.scrollY < 140) {
+    return "scanner";
+  }
+
   const scrollLine = window.scrollY + HEADER_OFFSET + LINE_BUFFER;
   const oppStart = opportunities.offsetTop;
 
@@ -139,8 +144,20 @@ export function useSectionHashSync(enabled) {
   useEffect(() => {
     if (!enabled) return;
 
-    const section = sectionFromRoute(getRoute());
-    if (!section || section === "scanner") return;
+    const route = getRoute();
+    const section = sectionFromRoute(route);
+
+    // Fresh platform entry (login): always show scanner form, never jump to opportunities.
+    if (!section || section === "scanner") {
+      programmaticScrollUntil = Date.now() + 1800;
+      navigateTo("/scanner", { replace: true });
+      window.scrollTo({ top: 0, behavior: "auto" });
+      const form = document.getElementById("scan-form");
+      window.setTimeout(() => {
+        form?.scrollIntoView({ behavior: "auto", block: "start" });
+      }, 40);
+      return undefined;
+    }
 
     const timer = window.setTimeout(() => {
       scrollToSection(section, "auto");

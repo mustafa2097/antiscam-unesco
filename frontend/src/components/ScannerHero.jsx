@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useScan } from "../context/ScanContext";
@@ -70,11 +70,20 @@ export default function ScannerHero() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  const resultRef = useRef(null);
 
   const canSubmit = useMemo(() => {
     if (submitting) return false;
     return text.trim().length > 0 || link.trim().length > 0 || Boolean(file);
   }, [text, link, file, submitting]);
+
+  useEffect(() => {
+    if (!result) return undefined;
+    const timer = window.setTimeout(() => {
+      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [result]);
 
   const onSubmit = async (event) => {
     event.preventDefault();
@@ -146,6 +155,7 @@ export default function ScannerHero() {
           </div>
 
           <form
+            id="scan-form"
             onSubmit={onSubmit}
             className="panel workspace-panel relative anim-fade-up anim-delay-2"
           >
@@ -218,7 +228,11 @@ export default function ScannerHero() {
             </div>
 
             {result ? (
-              <div className="space-y-4 border-t rule-strong bg-paper/70 px-5 py-4 sm:px-6 anim-fade-in">
+              <div
+                id="scan-result"
+                ref={resultRef}
+                className="space-y-4 border-t rule-strong bg-paper/70 px-5 py-4 sm:px-6 anim-fade-in"
+              >
                 {riskPct != null ? (
                   <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>

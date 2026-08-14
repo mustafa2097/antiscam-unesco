@@ -388,7 +388,9 @@ html[dir="rtl"] .brand-wordmark {
 }
 
 #scanner,
-#opportunities {
+#opportunities,
+#scan-form,
+#scan-result {
   scroll-margin-top: 96px;
 }
 

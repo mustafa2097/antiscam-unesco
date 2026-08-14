@@ -13,11 +13,14 @@ export function ScanProvider({ children }) {
     if (role) setDetectedRole(role);
   }, []);
 
-  const clearRole = useCallback(() => setDetectedRole(null), []);
+  const clearScan = useCallback(() => {
+    setDetectedRole(null);
+    setLastScan(null);
+  }, []);
 
   const value = useMemo(
-    () => ({ detectedRole, lastScan, applyScanResult, clearRole, setDetectedRole }),
-    [detectedRole, lastScan, applyScanResult, clearRole],
+    () => ({ detectedRole, lastScan, applyScanResult, clearRole, clearScan, setDetectedRole }),
+    [detectedRole, lastScan, applyScanResult, clearRole, clearScan],
   );
 
   return <ScanContext.Provider value={value}>{children}</ScanContext.Provider>;
