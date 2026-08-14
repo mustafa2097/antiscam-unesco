@@ -1,0 +1,128 @@
+{
+  "landing": {
+    "eyebrow": "فحص عروض العمل",
+    "title": "تأكد قبل أن تقبل.",
+    "subtitle": "افحص نص العرض وروابطه ومستنداته قبل اتخاذ أي خطوة.",
+    "createAccount": "إنشاء حساب",
+    "imageAlt": "مكتب منظّم لمراجعة عرض عمل",
+    "navigation": "التنقل الرئيسي",
+    "flow": {
+      "offer": "العرض",
+      "check": "الفحص",
+      "result": "النتيجة"
+    }
+  },
+  "demo": {
+    "title": "ملخص الفحص",
+    "report": "نتيجة الفحص",
+    "probability": "مؤشر الخطورة",
+    "riskFactors": "المؤشرات المكتشفة",
+    "factors": {
+      "urgency": "صياغة تستعجل الرد",
+      "payment": "طلب دفع قبل بدء العمل",
+      "identity": "تعذّر التحقق من جهة الإعلان"
+    },
+    "statusLabel": "النتيجة",
+    "status": "مخاطر مرتفعة",
+    "imageAlt": "مستند طلب عمل مُعدّ للتحقق",
+    "signals": {
+      "language": "صياغة العرض",
+      "identity": "جهة الإعلان",
+      "payment": "طلبات الدفع"
+    }
+  },
+  "scanner": {
+    "eyebrow": "§ ٠١ · الفحص",
+    "brand": "مكافح الاحتيال",
+    "title": "افحص العرض.",
+    "badge": "مكافح الاحتيال · العراق",
+    "tabs": {
+      "label": "الفحص",
+      "text": "نص",
+      "image": "صورة",
+      "link": "رابط"
+    },
+    "form": {
+      "textPlaceholder": "الصق نص العرض",
+      "imageHint": "أفلت صورة أو ملف PDF",
+      "linkPlaceholder": "https://",
+      "submit": "ابدأ الفحص",
+      "scanning": "جارٍ الفحص…"
+    },
+    "result": {
+      "detected": "المجال الوظيفي",
+      "seeBelow": "عرض النتائج",
+      "noRole": "تعذّر تحديد المجال الوظيفي.",
+      "risk": "احتمال النصب",
+      "saferPaths": "بدائل آمنة في نفس المجال",
+      "courses": "دورات",
+      "jobs": "وظائف",
+      "levels": {
+        "high": "مرتفع",
+        "medium": "متوسط",
+        "low": "منخفض",
+        "safe": "آمن"
+      }
+    }
+  },
+  "opportunities": {
+    "eyebrow": "§ ٠٢ · الفرص",
+    "title": "الفرص",
+    "aiFilter": "مطابقة",
+    "showingFor": "المهنة",
+    "clear": "إلغاء",
+    "governorate": "المحافظة",
+    "allIraq": "جميع المحافظات",
+    "inGovernorate": "في",
+    "updating": "جارٍ التحديث…",
+    "count": "{{count}} نتيجة",
+    "empty": "لا توجد نتائج.",
+    "categories": {
+      "label": "التصنيف",
+      "job": "وظائف",
+      "course": "دورات",
+      "volunteer": "تطوع"
+    },
+    "subs": {
+      "menu": "خيارات",
+      "all": "الكل",
+      "online": "عن بُعد",
+      "onsite": "حضوري",
+      "paid": "مدفوع",
+      "free": "مجاني"
+    },
+    "meta": {
+      "verified": "موثّق",
+      "age": "العمر",
+      "open": "فتح"
+    }
+  },
+  "nav": {
+    "brand": "مكافح الاحتيال",
+    "login": "تسجيل الدخول",
+    "logout": "خروج",
+    "language": "اللغة",
+    "home": "الرئيسية"
+  },
+  "auth": {
+    "title": "تسجيل الدخول",
+    "registerTitle": "إنشاء حساب",
+    "email": "البريد",
+    "fullName": "الاسم الكامل",
+    "password": "كلمة المرور",
+    "confirmPassword": "التأكيد",
+    "passwordHint": "١٠ فأكثر · حرف كبير · حرف صغير · رقم · رمز",
+    "passwordMismatch": "كلمتا المرور غير متطابقتين",
+    "submit": "تسجيل الدخول",
+    "register": "إنشاء الحساب",
+    "tabsLabel": "نوع الحساب",
+    "back": "العودة",
+    "working": "…",
+    "loginFailed": "البريد أو كلمة المرور غير صحيحة",
+    "registerFailed": "تعذّر إنشاء الحساب",
+    "requestFailed": "فشل الطلب",
+    "haveAccount": "لديك حساب؟",
+    "noAccount": "مستخدم جديد؟",
+    "demoFill": "استخدام الحساب التجريبي"
+  }
+}

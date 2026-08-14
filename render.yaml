@@ -1,0 +1,21 @@
+# Free online deploy (Render + Neon + Cloudflare Pages / Render Static)
+
+services:
+  - type: web
+    name: antiscam-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: PYTHONUNBUFFERED
+        value: "1"

@@ -1,0 +1,128 @@
+{
+  "landing": {
+    "eyebrow": "Job offer verification",
+    "title": "Verify the offer.",
+    "subtitle": "Review text, links, and documents before responding.",
+    "createAccount": "Create account",
+    "imageAlt": "Organized office desk used for reviewing a job offer",
+    "navigation": "Main navigation",
+    "flow": {
+      "offer": "Offer",
+      "check": "Check",
+      "result": "Result"
+    }
+  },
+  "demo": {
+    "title": "Analysis result",
+    "report": "Analysis report",
+    "probability": "Scam probability",
+    "riskFactors": "Risk factors",
+    "factors": {
+      "urgency": "High-urgency language detected",
+      "payment": "Payment requested before employment",
+      "identity": "Employer identity could not be verified"
+    },
+    "statusLabel": "Assessment",
+    "status": "High risk",
+    "imageAlt": "Job application document prepared for verification",
+    "signals": {
+      "language": "Language",
+      "identity": "Identity",
+      "payment": "Payment"
+    }
+  },
+  "scanner": {
+    "eyebrow": "§ 01 · Scanner",
+    "brand": "Anti Scam",
+    "title": "Verify the offer.",
+    "badge": "Anti Scam · Iraq",
+    "tabs": {
+      "label": "Scanner",
+      "text": "Text",
+      "image": "Image",
+      "link": "Link"
+    },
+    "form": {
+      "textPlaceholder": "Paste the offer here",
+      "imageHint": "Drop image or PDF · click to browse",
+      "linkPlaceholder": "https://",
+      "submit": "Run check",
+      "scanning": "Checking…"
+    },
+    "result": {
+      "detected": "Detected role",
+      "seeBelow": "See matches",
+      "noRole": "No role detected.",
+      "risk": "Scam probability",
+      "saferPaths": "Safer paths in the same field",
+      "courses": "Courses",
+      "jobs": "Jobs",
+      "levels": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low",
+        "safe": "Safe"
+      }
+    }
+  },
+  "opportunities": {
+    "eyebrow": "§ 02 · Directory",
+    "title": "Opportunities",
+    "aiFilter": "Match",
+    "showingFor": "Role",
+    "clear": "Clear",
+    "governorate": "Governorate",
+    "allIraq": "All Iraq",
+    "inGovernorate": "In",
+    "updating": "Updating…",
+    "count": "{{count}} results",
+    "empty": "No results.",
+    "categories": {
+      "label": "Category",
+      "job": "Jobs",
+      "course": "Courses",
+      "volunteer": "Volunteer"
+    },
+    "subs": {
+      "menu": "options",
+      "all": "All",
+      "online": "Online",
+      "onsite": "Onsite",
+      "paid": "Paid",
+      "free": "Free"
+    },
+    "meta": {
+      "verified": "Verified",
+      "age": "Age",
+      "open": "Open"
+    }
+  },
+  "nav": {
+    "brand": "Anti Scam",
+    "login": "Sign in",
+    "logout": "Sign out",
+    "language": "Language",
+    "home": "Home"
+  },
+  "auth": {
+    "title": "Sign in",
+    "registerTitle": "New account",
+    "email": "Email",
+    "fullName": "Full name",
+    "password": "Password",
+    "confirmPassword": "Confirm",
+    "passwordHint": "10+ chars · upper · lower · digit · symbol",
+    "passwordMismatch": "Passwords do not match",
+    "submit": "Sign in",
+    "register": "Register",
+    "tabsLabel": "Account type",
+    "back": "Back",
+    "working": "…",
+    "loginFailed": "Incorrect email or password",
+    "registerFailed": "Could not create account",
+    "requestFailed": "Request failed",
+    "haveAccount": "Already have an account?",
+    "noAccount": "New here?",
+    "demoFill": "Use demo account"
+  }
+}
