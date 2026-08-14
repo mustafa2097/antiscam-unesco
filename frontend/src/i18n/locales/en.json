@@ -128,7 +128,8 @@
     "login": "Sign in",
     "logout": "Sign out",
     "language": "Language",
-    "home": "Home"
+    "home": "Home",
+    "menu": "Menu"
   },
   "auth": {
     "title": "Sign in",
