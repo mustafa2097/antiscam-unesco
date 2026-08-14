@@ -39,10 +39,11 @@ def _set_auth_cookies(response: Response, subject: str) -> None:
         "refresh",
         timedelta(days=settings.refresh_token_expire_days),
     )
+    # Cross-origin frontend (antiscam-web) needs SameSite=None when Secure.
     common = {
         "httponly": True,
         "secure": settings.cookie_secure,
-        "samesite": "lax",
+        "samesite": "none" if settings.cookie_secure else "lax",
         "path": "/",
     }
     response.set_cookie(
@@ -67,7 +68,7 @@ def _clear_auth_cookies(response: Response) -> None:
             path="/",
             httponly=True,
             secure=settings.cookie_secure,
-            samesite="lax",
+            samesite="none" if settings.cookie_secure else "lax",
         )
 
 
