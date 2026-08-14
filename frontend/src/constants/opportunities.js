@@ -37,9 +37,25 @@ export const CATEGORIES = [
     ],
   },
   {
+    id: "internship",
+    labelKey: "opportunities.categories.internship",
+    subs: [
+      { id: "online", labelKey: "opportunities.subs.online" },
+      { id: "onsite", labelKey: "opportunities.subs.onsite" },
+    ],
+  },
+  {
     id: "volunteer",
     labelKey: "opportunities.categories.volunteer",
     subs: null,
+  },
+  {
+    id: "scholarship",
+    labelKey: "opportunities.categories.scholarship",
+    subs: [
+      { id: "paid", labelKey: "opportunities.subs.paid" },
+      { id: "free", labelKey: "opportunities.subs.free" },
+    ],
   },
 ];
 

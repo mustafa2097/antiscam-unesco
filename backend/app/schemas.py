@@ -139,6 +139,8 @@ class OpportunityPublic(BaseModel):
     verified: bool
     ai_classified: bool = False
     source_url: str
+    fallback_url: str = ""
+    deadline: str = ""
 
     model_config = {"from_attributes": True, "use_enum_values": True}
 
@@ -147,6 +149,8 @@ class OpportunityCategoryQuery(str, Enum):
     job = "job"
     course = "course"
     volunteer = "volunteer"
+    internship = "internship"
+    scholarship = "scholarship"
 
 
 class OpportunitySubFilter(str, Enum):

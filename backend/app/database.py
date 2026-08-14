@@ -64,3 +64,15 @@ async def init_db() -> None:
                 "ADD COLUMN IF NOT EXISTS ai_classified BOOLEAN NOT NULL DEFAULT FALSE"
             )
         )
+        await conn.execute(
+            text(
+                "ALTER TABLE opportunities "
+                "ADD COLUMN IF NOT EXISTS fallback_url VARCHAR(2048) NOT NULL DEFAULT ''"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE opportunities "
+                "ADD COLUMN IF NOT EXISTS deadline VARCHAR(64) NOT NULL DEFAULT ''"
+            )
+        )

@@ -31,6 +31,8 @@ class OpportunityCategory(str, enum.Enum):
     job = "job"
     course = "course"
     volunteer = "volunteer"
+    internship = "internship"
+    scholarship = "scholarship"
 
 
 class OpportunityType(str, enum.Enum):
@@ -87,6 +89,8 @@ class Opportunity(Base):
     verified: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     ai_classified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     source_url: Mapped[str] = mapped_column(String(2048), default="", nullable=False)
+    fallback_url: Mapped[str] = mapped_column(String(2048), default="", nullable=False)
+    deadline: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     metadata_json: Mapped[dict] = mapped_column("metadata", JSONB, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)

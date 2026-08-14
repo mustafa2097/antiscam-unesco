@@ -55,6 +55,10 @@
       "seeOpportunities": "شاهد الفرص المتاحة",
       "noRole": "تعذّر تحديد المجال الوظيفي.",
       "risk": "احتمال النصب",
+      "whyTitle": "لماذا حصلت هذه النسبة؟",
+      "mlShare": "مساهمة نموذج ML",
+      "rulesShare": "مساهمة القواعد",
+      "signalsTitle": "إشارات التحذير المطابقة",
       "saferPaths": "بدائل آمنة في نفس المجال",
       "courses": "دورات",
       "jobs": "وظائف",
@@ -107,7 +111,9 @@
       "label": "التصنيف",
       "job": "وظائف",
       "course": "دورات",
-      "volunteer": "تطوع"
+      "volunteer": "تطوع",
+      "internship": "تدريب",
+      "scholarship": "منح وزمالات"
     },
     "subs": {
       "menu": "خيارات",
@@ -120,7 +126,10 @@
     "meta": {
       "verified": "موثّق",
       "age": "العمر",
-      "open": "فتح"
+      "open": "فتح",
+      "openDirect": "الرابط المباشر",
+      "fallback": "بحث بديل",
+      "deadline": "الموعد"
     }
   },
   "nav": {

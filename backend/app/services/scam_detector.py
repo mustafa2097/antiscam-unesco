@@ -10,6 +10,15 @@ from app.models import ScamIndicator
 from app.services.role_extractor import extract_role
 from app.services.scam_patterns import BUILTIN_INDICATORS
 
+CATEGORY_LABELS = {
+    "payment": {"en": "Payment / fees", "ar": "طلبات مالية / رسوم"},
+    "urgency": {"en": "Urgency pressure", "ar": "ضغط الاستعجال"},
+    "identity": {"en": "Identity / documents", "ar": "هوية / مستندات"},
+    "income": {"en": "Unrealistic income", "ar": "دخل غير واقعي"},
+    "contact": {"en": "Suspicious contact", "ar": "وسيلة تواصل مشبوهة"},
+    "general": {"en": "Other warning signs", "ar": "علامات تحذير أخرى"},
+}
+
 
 def _match_indicators(text: str, indicators: list[dict[str, Any]]) -> list[dict[str, Any]]:
     lowered = (text or "").lower()
@@ -45,6 +54,96 @@ async def _load_db_indicators(db: AsyncSession | None) -> list[dict[str, Any]]:
     ]
 
 
+def _rule_score(matches: list[dict[str, Any]]) -> float:
+    if not matches:
+        return 0.0
+    severities = sorted((m["severity"] for m in matches), reverse=True)
+    acc = 0.0
+    for i, sev in enumerate(severities[:8]):
+        acc += sev * (0.55**i)
+    return min(acc, 1.0)
+
+
+def _category_signal_strength(matches: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Per-category signal strength (0–100), not independent probabilities."""
+    totals: dict[str, float] = {}
+    reasons: dict[str, list[str]] = {}
+    for hit in matches:
+        cat = hit["category"]
+        totals[cat] = totals.get(cat, 0.0) + float(hit["severity"])
+        reasons.setdefault(cat, [])
+        if hit["pattern"] not in reasons[cat]:
+            reasons[cat].append(hit["pattern"])
+
+    if not totals:
+        return []
+
+    peak = max(totals.values()) or 1.0
+    ordered = sorted(totals.items(), key=lambda item: item[1], reverse=True)
+    return [
+        {
+            "category": cat,
+            "label_en": CATEGORY_LABELS.get(cat, CATEGORY_LABELS["general"])["en"],
+            "label_ar": CATEGORY_LABELS.get(cat, CATEGORY_LABELS["general"])["ar"],
+            "strength_pct": round(min(totals[cat] / peak, 1.0) * 100),
+            "reasons": reasons.get(cat, [])[:4],
+        }
+        for cat, _ in ordered
+    ]
+
+
+def _build_breakdown(
+    *,
+    ml_probability: float,
+    ml_available: bool,
+    matches: list[dict[str, Any]],
+    risk_score: float,
+) -> dict[str, Any]:
+    rule_score = _rule_score(matches)
+    ml_pct = round(ml_probability * 100, 1)
+    rules_pct = round(rule_score * 100, 1)
+    final_pct = round(risk_score * 100, 1)
+
+    if ml_available:
+        ml_weight = 0.55
+        rules_weight = 0.45
+        ml_contrib = round(ml_probability * ml_weight * 100, 1)
+        rules_contrib = round(rule_score * rules_weight * 100, 1)
+        formula_en = f"{final_pct}% = 55% × ML ({ml_pct}%) + 45% × rules ({rules_pct}%)"
+        formula_ar = f"{final_pct}% = 55% × نموذج ML ({ml_pct}%) + 45% × القواعد ({rules_pct}%)"
+        mode = "blended"
+    else:
+        ml_weight = 0.0
+        rules_weight = 1.0
+        ml_contrib = 0.0
+        rules_contrib = round(rule_score * 100, 1)
+        formula_en = f"{final_pct}% = rules only ({rules_pct}%) — ML model unavailable"
+        formula_ar = f"{final_pct}% = قواعد فقط ({rules_pct}%) — نموذج ML غير متاح"
+        mode = "rules_only"
+
+    return {
+        "mode": mode,
+        "final_pct": final_pct,
+        "ml_probability_pct": ml_pct if ml_available else None,
+        "rule_score_pct": rules_pct,
+        "ml_weight_pct": round(ml_weight * 100),
+        "rules_weight_pct": round(rules_weight * 100),
+        "ml_contribution_pct": ml_contrib,
+        "rules_contribution_pct": rules_contrib,
+        "formula_en": formula_en,
+        "formula_ar": formula_ar,
+        "signals": _category_signal_strength(matches),
+        "disclaimer_en": (
+            "Category bars show relative signal strength from matched warning patterns, "
+            "not separate probabilities that add to 100%."
+        ),
+        "disclaimer_ar": (
+            "أشرطة الفئات تعرض قوة الإشارة النسبية من الأنماط المطابقة، "
+            "وليست احتمالات مستقلة تجمع إلى 100%."
+        ),
+    }
+
+
 def _combine_scores(
     *,
     ml_probability: float,
@@ -55,14 +154,8 @@ def _combine_scores(
     Blend ML + rule hits into a single risk score in [0, 1].
     """
     flags: list[str] = []
-    rule_score = 0.0
+    rule_score = _rule_score(matches)
     if matches:
-        # diminishing returns so many weak hits don't explode the score
-        severities = sorted((m["severity"] for m in matches), reverse=True)
-        acc = 0.0
-        for i, sev in enumerate(severities[:8]):
-            acc += sev * (0.55**i)
-        rule_score = min(acc, 1.0)
         flags.extend(sorted({m["category"] for m in matches}))
 
     if ml_available:
@@ -107,6 +200,13 @@ async def analyze_job_text(
         matches=matches,
     )
 
+    breakdown = _build_breakdown(
+        ml_probability=ml_prob,
+        ml_available=ml_available,
+        matches=matches,
+        risk_score=risk_score,
+    )
+
     model_meta: dict[str, Any] = {}
     try:
         from app.ml.predictor import MODEL_PATH
@@ -134,6 +234,7 @@ async def analyze_job_text(
             "ml_available": ml_available,
             "model": model_meta,
             "indicator_hits": matches[:12],
+            "breakdown": breakdown,
             "recommend": risk_score >= 0.45,
             **(extra_metadata or {}),
         },

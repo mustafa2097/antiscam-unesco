@@ -45,14 +45,20 @@ def _apply_category_filters(
         clauses.append(Opportunity.is_volunteer.is_(True))
         return
 
-    if category is OpportunityCategoryQuery.job:
+    if category in (
+        OpportunityCategoryQuery.job,
+        OpportunityCategoryQuery.internship,
+    ):
         if sub is OpportunitySubFilter.online:
             clauses.append(Opportunity.mode == OpportunityMode.online)
         elif sub is OpportunitySubFilter.onsite:
             clauses.append(Opportunity.mode == OpportunityMode.offline)
         return
 
-    if category is OpportunityCategoryQuery.course:
+    if category in (
+        OpportunityCategoryQuery.course,
+        OpportunityCategoryQuery.scholarship,
+    ):
         if sub is OpportunitySubFilter.paid:
             clauses.extend(
                 [
@@ -98,13 +104,19 @@ async def list_opportunities(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="volunteer has no sub filters",
         )
-    if category is OpportunityCategoryQuery.job and sub not in (
+    if category in (
+        OpportunityCategoryQuery.job,
+        OpportunityCategoryQuery.internship,
+    ) and sub not in (
         None,
         OpportunitySubFilter.online,
         OpportunitySubFilter.onsite,
     ):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="invalid job sub")
-    if category is OpportunityCategoryQuery.course and sub not in (
+    if category in (
+        OpportunityCategoryQuery.course,
+        OpportunityCategoryQuery.scholarship,
+    ) and sub not in (
         None,
         OpportunitySubFilter.paid,
         OpportunitySubFilter.free,
@@ -139,7 +151,7 @@ async def list_opportunities(
         select(Opportunity)
         .where(and_(*clauses))
         .order_by(Opportunity.created_at.desc())
-        .limit(100)
+        .limit(150)
     )
     result = await db.execute(stmt)
     rows = result.scalars().all()

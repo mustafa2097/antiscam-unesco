@@ -14,7 +14,9 @@ const MARQUEE_KEYS = [
   "opportunities.categories.course",
   "opportunities.subs.paid",
   "opportunities.subs.free",
+  "opportunities.categories.internship",
   "opportunities.categories.volunteer",
+  "opportunities.categories.scholarship",
   "opportunities.meta.verified",
 ];
 
@@ -37,6 +39,15 @@ function mergeResults(results) {
     best?.metadata?.recommendations ||
     null;
 
+  const breakdown = best?.metadata?.breakdown || null;
+  const indicatorHits = [
+    ...new Map(
+      valid
+        .flatMap((r) => r?.metadata?.indicator_hits || [])
+        .map((hit) => [hit.pattern, hit]),
+    ).values(),
+  ].slice(0, 12);
+
   return {
     ...best,
     matched_indicators: [
@@ -47,6 +58,8 @@ function mergeResults(results) {
       ...(best.metadata || {}),
       detected_role: detected || null,
       recommendations,
+      breakdown,
+      indicator_hits: indicatorHits.length ? indicatorHits : best?.metadata?.indicator_hits || [],
     },
   };
 }
@@ -115,6 +128,7 @@ export default function ScannerHero() {
     result?.risk_score != null ? Math.round(Number(result.risk_score) * 100) : null;
   const riskLevel = result?.risk_level || null;
   const indicators = result?.matched_indicators || [];
+  const breakdown = result?.metadata?.breakdown;
   const recommendations = result?.metadata?.recommendations;
   const curatedCourses = recommendations?.curated_courses || [];
   const curatedJobs = recommendations?.curated_jobs || [];
@@ -257,6 +271,94 @@ export default function ScannerHero() {
                   </div>
                 ) : null}
 
+                {breakdown ? (
+                  <div className="space-y-4 border border-ink/15 bg-paper-raised p-4">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">
+                        {t("scanner.result.whyTitle")}
+                      </p>
+                      <p className="mt-2 text-sm leading-relaxed text-ink">
+                        {isArabic ? breakdown.formula_ar : breakdown.formula_en}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {breakdown.ml_contribution_pct != null && breakdown.mode === "blended" ? (
+                        <div className="border border-ink/10 px-3 py-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                            {t("scanner.result.mlShare")}
+                          </p>
+                          <p className="mt-1 font-display text-xl font-semibold text-ink">
+                            {breakdown.ml_contribution_pct}%
+                          </p>
+                          <div className="mt-2 h-1 bg-ink/10">
+                            <div
+                              className="h-full bg-[#21384c]"
+                              style={{ width: `${Math.min(breakdown.ml_contribution_pct, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      ) : null}
+                      <div className="border border-ink/10 px-3 py-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                          {t("scanner.result.rulesShare")}
+                        </p>
+                        <p className="mt-1 font-display text-xl font-semibold text-ink">
+                          {breakdown.rules_contribution_pct}%
+                        </p>
+                        <div className="mt-2 h-1 bg-ink/10">
+                          <div
+                            className="h-full bg-[#b45b3b]"
+                            style={{ width: `${Math.min(breakdown.rules_contribution_pct, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {breakdown.signals?.length ? (
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">
+                          {t("scanner.result.signalsTitle")}
+                        </p>
+                        <ul className="mt-3 space-y-3">
+                          {breakdown.signals.slice(0, 5).map((signal) => (
+                            <li key={signal.category}>
+                              <div className="flex items-center justify-between gap-3 text-sm">
+                                <span className="font-semibold text-ink">
+                                  {isArabic ? signal.label_ar : signal.label_en}
+                                </span>
+                                <span className="text-ink-muted">{signal.strength_pct}%</span>
+                              </div>
+                              <div className="mt-1.5 h-1 bg-ink/10">
+                                <div
+                                  className="h-full bg-[#b45b3b]"
+                                  style={{ width: `${Math.min(signal.strength_pct, 100)}%` }}
+                                />
+                              </div>
+                              {signal.reasons?.length ? (
+                                <ul className="mt-2 flex flex-wrap gap-1.5">
+                                  {signal.reasons.map((reason) => (
+                                    <li
+                                      key={reason}
+                                      className="border border-ink/12 bg-paper px-2 py-0.5 text-[10px] text-ink-muted"
+                                    >
+                                      {reason}
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    <p className="text-xs leading-relaxed text-ink-muted">
+                      {isArabic ? breakdown.disclaimer_ar : breakdown.disclaimer_en}
+                    </p>
+                  </div>
+                ) : null}
+
                 {indicators.length ? (
                   <ul className="flex flex-wrap gap-2">
                     {indicators.slice(0, 6).map((item) => (
@@ -303,7 +405,7 @@ export default function ScannerHero() {
                             const title = isArabic
                               ? item.title_ar || item.title_en
                               : item.title_en || item.title_ar;
-                            const href = item.source_url || item.url || "#opportunities";
+                            const href = item.source_url || item.url || item.fallback_url || "#opportunities";
                             const org = item.organization || item.org || "";
                             return (
                               <li key={`c-${idx}`}>
@@ -332,7 +434,7 @@ export default function ScannerHero() {
                             const title = isArabic
                               ? item.title_ar || item.title_en
                               : item.title_en || item.title_ar;
-                            const href = item.source_url || item.url || "#opportunities";
+                            const href = item.source_url || item.url || item.fallback_url || "#opportunities";
                             const org = item.organization || item.org || "";
                             return (
                               <li key={`j-${idx}`}>

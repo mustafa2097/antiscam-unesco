@@ -8,17 +8,16 @@ function governorateLabel(gov, isArabic) {
 }
 
 function categoryLabel(item, t) {
-  if (item.category === "job") return t("opportunities.categories.job");
-  if (item.category === "course") return t("opportunities.categories.course");
-  if (item.category === "volunteer") return t("opportunities.categories.volunteer");
-  return "";
+  const key = `opportunities.categories.${item.category}`;
+  const translated = t(key);
+  return translated !== key ? translated : item.category;
 }
 
 function modeLabel(item, t) {
-  if (item.category === "job") {
+  if (item.category === "job" || item.category === "internship") {
     return item.mode === "online" ? t("opportunities.subs.online") : t("opportunities.subs.onsite");
   }
-  if (item.category === "course") {
+  if (item.category === "course" || item.category === "scholarship") {
     return item.is_free ? t("opportunities.subs.free") : t("opportunities.subs.paid");
   }
   return null;
@@ -52,20 +51,39 @@ export default function OpportunityCard({ item, index, isArabic }) {
           <p className="mt-1 text-sm text-ink-muted">{item.organization}</p>
         ) : null}
 
-        <div className="mt-auto flex items-center justify-between pt-6">
-          <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-muted">
-            {govName || "—"}
-          </span>
-          {item.source_url ? (
-            <a
-              href={item.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink underline-offset-4 hover:underline"
-            >
-              {t("opportunities.meta.open")} →
-            </a>
-          ) : null}
+        <div className="mt-auto space-y-2 pt-6">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-muted">
+              {govName || "—"}
+            </span>
+            {item.deadline ? (
+              <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-muted">
+                {t("opportunities.meta.deadline")}: {item.deadline}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {item.source_url ? (
+              <a
+                href={item.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink underline-offset-4 hover:underline"
+              >
+                {t("opportunities.meta.openDirect")} →
+              </a>
+            ) : null}
+            {item.fallback_url ? (
+              <a
+                href={item.fallback_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+              >
+                {t("opportunities.meta.fallback")} ↗
+              </a>
+            ) : null}
+          </div>
         </div>
       </div>
     </article>
