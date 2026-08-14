@@ -36,6 +36,8 @@ def test_scam_breakdown_blended_mode():
         ml_available=True,
         matches=matches,
         risk_score=risk_score,
+        risk_level=level,
+        model_meta={"rows": 17879},
     )
     assert breakdown["mode"] == "blended"
     assert breakdown["ml_weight_pct"] == 55
@@ -44,6 +46,9 @@ def test_scam_breakdown_blended_mode():
     assert "55%" in breakdown["formula_en"]
     assert level in {"high", "medium", "low", "safe"}
     assert "ml_model" in flags
+    assert breakdown["summary_en"] and breakdown["summary_ar"]
+    assert breakdown["reasons_en"] and breakdown["reasons_ar"]
+    assert any("AI model" in r for r in breakdown["reasons_en"])
 
 
 def test_scam_breakdown_rules_only_mode():

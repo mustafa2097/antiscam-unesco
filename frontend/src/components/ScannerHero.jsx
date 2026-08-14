@@ -277,7 +277,28 @@ export default function ScannerHero() {
                       <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">
                         {t("scanner.result.whyTitle")}
                       </p>
-                      <p className="mt-2 text-sm leading-relaxed text-ink">
+                      {(isArabic ? breakdown.reasons_ar : breakdown.reasons_en)?.length ? (
+                        <ul className="mt-2 space-y-1.5">
+                          {(isArabic ? breakdown.reasons_ar : breakdown.reasons_en).map(
+                            (reason, idx) => (
+                              <li
+                                key={`reason-${idx}`}
+                                className="flex gap-2 text-sm leading-relaxed text-ink"
+                              >
+                                <span className="mt-0.5 text-ink-muted" aria-hidden="true">
+                                  •
+                                </span>
+                                <span>{reason}</span>
+                              </li>
+                            ),
+                          )}
+                        </ul>
+                      ) : (
+                        <p className="mt-2 text-sm leading-relaxed text-ink">
+                          {isArabic ? breakdown.summary_ar : breakdown.summary_en}
+                        </p>
+                      )}
+                      <p className="mt-3 text-xs font-medium text-ink-muted">
                         {isArabic ? breakdown.formula_ar : breakdown.formula_en}
                       </p>
                     </div>

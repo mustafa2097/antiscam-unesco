@@ -19,6 +19,115 @@ CATEGORY_LABELS = {
     "general": {"en": "Other warning signs", "ar": "علامات تحذير أخرى"},
 }
 
+# Plain-language explanation of why each signal category raises scam risk.
+CATEGORY_REASON = {
+    "payment": {
+        "en": "it asks you to pay money or fees up front — legitimate jobs never charge you to get hired",
+        "ar": "يطلب منك دفع مال أو رسوم مقدماً، والوظيفة الحقيقية لا تطلب مالاً مقابل التوظيف",
+    },
+    "urgency": {
+        "en": "it pressures you to act fast — a common trick to stop you from thinking or checking",
+        "ar": "يضغط عليك للتصرف بسرعة، وهي حيلة شائعة لمنعك من التفكير أو التحقق",
+    },
+    "identity": {
+        "en": "it asks for personal documents or ID too early, which can be used to steal your identity",
+        "ar": "يطلب مستنداتك أو هويتك مبكراً جداً، وقد تُستخدم لسرقة هويتك",
+    },
+    "income": {
+        "en": "it promises unrealistic income for little effort — a classic lure",
+        "ar": "يعد بدخل غير واقعي مقابل مجهود بسيط، وهو طُعم كلاسيكي",
+    },
+    "contact": {
+        "en": "it pushes contact through unofficial channels like personal messaging apps",
+        "ar": "يدفعك للتواصل عبر قنوات غير رسمية مثل تطبيقات المراسلة الشخصية",
+    },
+    "general": {
+        "en": "its wording matches other known scam patterns",
+        "ar": "صياغته تطابق أنماط احتيال معروفة أخرى",
+    },
+}
+
+LEVEL_STATEMENT = {
+    "high": {
+        "en": "This offer looks very likely to be a scam.",
+        "ar": "هذا العرض يبدو محتالاً بدرجة كبيرة جداً.",
+    },
+    "medium": {
+        "en": "This offer shows several scam warning signs — be careful.",
+        "ar": "هذا العرض يحمل عدة علامات تحذير من الاحتيال، فكن حذراً.",
+    },
+    "low": {
+        "en": "This offer shows a few mild warning signs.",
+        "ar": "هذا العرض يحمل بعض العلامات التحذيرية الخفيفة.",
+    },
+    "safe": {
+        "en": "This offer shows no clear scam signals, but always verify before sharing money or documents.",
+        "ar": "هذا العرض لا يظهر إشارات احتيال واضحة، لكن تحقّق دائماً قبل دفع أي مال أو مشاركة مستندات.",
+    },
+}
+
+
+def _build_narrative(
+    *,
+    risk_level: str,
+    final_pct: float,
+    ml_probability: float,
+    ml_available: bool,
+    signals: list[dict[str, Any]],
+    model_meta: dict[str, Any],
+) -> dict[str, str]:
+    """Build a human-readable explanation of why the model produced this score."""
+    reasons_en: list[str] = []
+    reasons_ar: list[str] = []
+
+    level = LEVEL_STATEMENT.get(risk_level, LEVEL_STATEMENT["safe"])
+    parts_en = [f"{level['en']} We estimated a {final_pct}% scam probability."]
+    parts_ar = [f"{level['ar']} قدّرنا احتمال الاحتيال بنسبة {final_pct}%."]
+
+    if ml_available:
+        ml_pct = round(ml_probability * 100, 1)
+        rows = model_meta.get("rows")
+        trained_note_en = f" trained on about {rows:,} real job postings" if rows else ""
+        trained_note_ar = f" المدرّب على نحو {rows:,} إعلان وظيفي حقيقي" if rows else ""
+        reasons_en.append(
+            f"Our AI model{trained_note_en} judged the wording as {ml_pct}% similar to known scams."
+        )
+        reasons_ar.append(
+            f"نموذج الذكاء الاصطناعي{trained_note_ar} رأى أن صياغة النص تشبه الاحتيال المعروف بنسبة {ml_pct}%."
+        )
+    else:
+        reasons_en.append(
+            "The AI model was unavailable, so this score relies only on rule-based warning patterns."
+        )
+        reasons_ar.append(
+            "نموذج الذكاء الاصطناعي غير متاح، لذا اعتمدت النسبة على أنماط التحذير القاعدية فقط."
+        )
+
+    if signals:
+        for signal in signals[:4]:
+            cat = signal["category"]
+            reason = CATEGORY_REASON.get(cat, CATEGORY_REASON["general"])
+            label_en = signal["label_en"]
+            label_ar = signal["label_ar"]
+            example = signal.get("reasons") or []
+            example_en = f' (e.g. "{example[0]}")' if example else ""
+            example_ar = f' (مثل: "{example[0]}")' if example else ""
+            reasons_en.append(f"{label_en}: {reason['en']}{example_en}.")
+            reasons_ar.append(f"{label_ar}: {reason['ar']}{example_ar}.")
+    else:
+        reasons_en.append("No specific scam warning phrases were matched in the text.")
+        reasons_ar.append("لم تُطابق أي عبارات تحذير احتيال محددة في النص.")
+
+    summary_en = " ".join(parts_en + reasons_en)
+    summary_ar = " ".join(parts_ar + reasons_ar)
+
+    return {
+        "summary_en": summary_en,
+        "summary_ar": summary_ar,
+        "reasons_en": reasons_en,
+        "reasons_ar": reasons_ar,
+    }
+
 
 def _match_indicators(text: str, indicators: list[dict[str, Any]]) -> list[dict[str, Any]]:
     lowered = (text or "").lower()
@@ -98,6 +207,8 @@ def _build_breakdown(
     ml_available: bool,
     matches: list[dict[str, Any]],
     risk_score: float,
+    risk_level: str = "safe",
+    model_meta: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     rule_score = _rule_score(matches)
     ml_pct = round(ml_probability * 100, 1)
@@ -121,6 +232,16 @@ def _build_breakdown(
         formula_ar = f"{final_pct}% = قواعد فقط ({rules_pct}%) — نموذج ML غير متاح"
         mode = "rules_only"
 
+    signals = _category_signal_strength(matches)
+    narrative = _build_narrative(
+        risk_level=risk_level,
+        final_pct=final_pct,
+        ml_probability=ml_probability,
+        ml_available=ml_available,
+        signals=signals,
+        model_meta=model_meta or {},
+    )
+
     return {
         "mode": mode,
         "final_pct": final_pct,
@@ -132,7 +253,11 @@ def _build_breakdown(
         "rules_contribution_pct": rules_contrib,
         "formula_en": formula_en,
         "formula_ar": formula_ar,
-        "signals": _category_signal_strength(matches),
+        "signals": signals,
+        "summary_en": narrative["summary_en"],
+        "summary_ar": narrative["summary_ar"],
+        "reasons_en": narrative["reasons_en"],
+        "reasons_ar": narrative["reasons_ar"],
         "disclaimer_en": (
             "Category bars show relative signal strength from matched warning patterns, "
             "not separate probabilities that add to 100%."
@@ -200,13 +325,6 @@ async def analyze_job_text(
         matches=matches,
     )
 
-    breakdown = _build_breakdown(
-        ml_probability=ml_prob,
-        ml_available=ml_available,
-        matches=matches,
-        risk_score=risk_score,
-    )
-
     model_meta: dict[str, Any] = {}
     try:
         from app.ml.predictor import MODEL_PATH
@@ -222,6 +340,15 @@ async def analyze_job_text(
             }
     except Exception:
         model_meta = {}
+
+    breakdown = _build_breakdown(
+        ml_probability=ml_prob,
+        ml_available=ml_available,
+        matches=matches,
+        risk_score=risk_score,
+        risk_level=risk_level,
+        model_meta=model_meta,
+    )
 
     return {
         "risk_score": risk_score,
