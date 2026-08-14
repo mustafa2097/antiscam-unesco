@@ -25,7 +25,14 @@ async def lifespan(_: FastAPI):
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    origins = [o.strip() for o in settings.frontend_origin.split(",") if o.strip()]
+    # Always allow the live Render frontend + local dev, merged with FRONTEND_ORIGIN.
+    default_origins = [
+        "https://antiscam-web.onrender.com",
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+    ]
+    configured = [o.strip() for o in settings.frontend_origin.split(",") if o.strip()]
+    origins = list(dict.fromkeys([*configured, *default_origins]))
     application = FastAPI(
         title=settings.app_name,
         docs_url="/docs",
@@ -37,7 +44,7 @@ def create_app() -> FastAPI:
 
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=origins or ["http://localhost:5000"],
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
