@@ -13,6 +13,10 @@ export function ScanProvider({ children }) {
     if (role) setDetectedRole(role);
   }, []);
 
+  const clearRole = useCallback(() => {
+    setDetectedRole(null);
+  }, []);
+
   const clearScan = useCallback(() => {
     setDetectedRole(null);
     setLastScan(null);
