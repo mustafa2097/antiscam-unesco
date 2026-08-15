@@ -9,6 +9,34 @@ MODEL_DIR = Path(__file__).resolve().parent / "artifacts"
 MODEL_PATH = MODEL_DIR / "scam_tfidf_logreg.joblib"
 
 _TOKEN_RE = re.compile(r"[^\W_]+", re.UNICODE)
+_EXPLANATION_STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "at",
+    "be",
+    "for",
+    "from",
+    "in",
+    "is",
+    "of",
+    "on",
+    "or",
+    "the",
+    "to",
+    "with",
+    "عن",
+    "على",
+    "في",
+    "من",
+    "إلى",
+    "او",
+    "أو",
+    "مع",
+    "هذا",
+    "هذه",
+}
 
 
 def normalize_text(text: str) -> str:
@@ -75,6 +103,9 @@ def explain_scam_features(text: str, *, limit: int = 4) -> list[str]:
     features: list[str] = []
     for contribution, term in contributions:
         if contribution <= 0 or term in features:
+            continue
+        words = term.split()
+        if not words or all(word in _EXPLANATION_STOPWORDS for word in words):
             continue
         # Prefer meaningful phrases and avoid returning a unigram already
         # represented inside a stronger bigram.
