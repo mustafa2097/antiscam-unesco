@@ -46,3 +46,41 @@ def predict_scam_probability(text: str) -> dict[str, float | bool]:
         return {"available": False, "probability": 0.0}
 
     return {"available": True, "probability": round(min(max(proba, 0.0), 1.0), 4)}
+
+
+def explain_scam_features(text: str, *, limit: int = 4) -> list[str]:
+    """Return the text features that pushed the logistic model toward scam."""
+    cleaned = normalize_text(text)
+    pipeline = load_model()
+    if not cleaned or pipeline is None:
+        return []
+
+    try:
+        vectorizer = pipeline.named_steps["tfidf"]
+        classifier = pipeline.named_steps["clf"]
+        row = vectorizer.transform([cleaned])
+        coefficients = classifier.coef_[0]
+        feature_names = vectorizer.get_feature_names_out()
+        contributions = sorted(
+            (
+                (float(row[0, index]) * float(coefficients[index]), str(feature_names[index]))
+                for index in row.indices
+                if float(coefficients[index]) > 0
+            ),
+            reverse=True,
+        )
+    except Exception:
+        return []
+
+    features: list[str] = []
+    for contribution, term in contributions:
+        if contribution <= 0 or term in features:
+            continue
+        # Prefer meaningful phrases and avoid returning a unigram already
+        # represented inside a stronger bigram.
+        if any(term in existing.split() and " " in existing for existing in features):
+            continue
+        features.append(term)
+        if len(features) >= max(1, limit):
+            break
+    return features

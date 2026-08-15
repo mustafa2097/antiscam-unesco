@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ml.predictor import predict_scam_probability
+from app.ml.predictor import explain_scam_features, predict_scam_probability
 from app.models import ScamIndicator
 from app.services.role_extractor import extract_role
 from app.services.scam_patterns import BUILTIN_INDICATORS
@@ -88,6 +89,48 @@ def _join_traits(traits: list[str], *, arabic: bool) -> str:
     return sep.join(traits[:-1]) + last + traits[-1]
 
 
+def _evidence_sentence(
+    content: str,
+    matches: list[dict[str, Any]],
+    *,
+    ml_available: bool,
+) -> str:
+    """Return the sentence that most influenced the assessment."""
+    sentences = [
+        " ".join(part.split()).strip(" -•")
+        for part in re.split(r"(?<=[.!?؟])\s+|\n+", content or "")
+        if part.strip()
+    ][:12]
+    if not sentences:
+        return ""
+
+    def rule_weight(sentence: str) -> float:
+        lowered = sentence.lower()
+        return sum(
+            float(hit.get("severity") or 0.0)
+            for hit in matches
+            if str(hit.get("pattern") or "").lower() in lowered
+        )
+
+    weighted = [(rule_weight(sentence), sentence) for sentence in sentences]
+    best_rule_weight, best_rule_sentence = max(weighted, key=lambda item: item[0])
+    if best_rule_weight > 0:
+        return best_rule_sentence[:280]
+
+    if ml_available:
+        scored: list[tuple[float, str]] = []
+        for sentence in sentences:
+            if len(sentence) < 12:
+                continue
+            prediction = predict_scam_probability(sentence)
+            if prediction["available"]:
+                scored.append((float(prediction["probability"]), sentence))
+        if scored:
+            return max(scored, key=lambda item: item[0])[1][:280]
+
+    return max(sentences, key=len)[:280]
+
+
 def _build_narrative(
     *,
     risk_level: str,
@@ -96,48 +139,126 @@ def _build_narrative(
     ml_available: bool,
     signals: list[dict[str, Any]],
     model_meta: dict[str, Any],
+    evidence_sentence: str = "",
+    model_terms: list[str] | None = None,
 ) -> dict[str, str]:
     """Build a human-readable, number-free explanation of why the score was given."""
     reasons_en: list[str] = []
     reasons_ar: list[str] = []
 
-    level = LEVEL_STATEMENT.get(risk_level, LEVEL_STATEMENT["safe"])
-
-    # Lead sentence: the model's own read of the text, grounded in what it saw.
     top_cats = [s["category"] for s in signals[:3]]
     traits_en = [CATEGORY_TRAIT.get(c, CATEGORY_TRAIT["general"])["en"] for c in top_cats]
     traits_ar = [CATEGORY_TRAIT.get(c, CATEGORY_TRAIT["general"])["ar"] for c in top_cats]
+    quote_en = f'“{evidence_sentence}”' if evidence_sentence else "the offer"
+    quote_ar = f"«{evidence_sentence}»" if evidence_sentence else "العرض"
+    terms = [term for term in (model_terms or []) if term][:4]
+    terms_en = ", ".join(f'“{term}”' for term in terms)
+    terms_ar = "، ".join(f"«{term}»" for term in terms)
 
-    if ml_available and top_cats:
+    # The wording changes within each risk band so a low score is not described
+    # like a scam verdict. The explanation remains grounded in the strongest
+    # sentence and any concrete warning categories that were actually matched.
+    if risk_level == "high" and top_cats:
         joined_en = _join_traits(traits_en, arabic=False)
         joined_ar = _join_traits(traits_ar, arabic=True)
         reasons_en.append(
-            f"The model read the text and saw {joined_en} — a combination that repeats in real scam ads."
+            f"The strongest sentence was {quote_en}. It combines {joined_en}; "
+            "several strong warning signs appearing together is typical of scam ads."
         )
         reasons_ar.append(
-            f"قرأ المودل النص ولاحظ أنه يحتوي {joined_ar} — وهو مزيج يتكرر في إعلانات النصب الحقيقية."
+            f"أكثر جملة أثّرت في التقييم هي {quote_ar}. جمعت هذه الجملة {joined_ar}؛ "
+            "واجتماع عدة إشارات قوية بهذا الشكل شائع في إعلانات النصب."
         )
-    elif ml_available and ml_probability >= 0.5:
+    elif risk_level == "high":
+        feature_en = f" The strongest model cues were {terms_en}." if terms else ""
+        feature_ar = f" أبرز العبارات التي دفعت المودل لهذا التقدير كانت {terms_ar}." if terms else ""
         reasons_en.append(
-            "The model read the text and found its overall tone and promises resemble scam ads, "
-            "even without an explicit red-flag phrase."
+            f"The strongest sentence was {quote_en}. Its wording is highly similar to patterns "
+            f"the model repeatedly sees in scam ads.{feature_en} "
+            "The warning is therefore strong even without an exact phrase match."
         )
         reasons_ar.append(
-            "قرأ المودل النص ووجد أن نبرته العامة ووعوده تشبه إعلانات النصب، حتى دون وجود عبارة تحذير صريحة."
+            f"أكثر جملة أثّرت في التقييم هي {quote_ar}. صياغتها شديدة الشبه بأنماط يراها المودل "
+            f"مراراً في إعلانات النصب.{feature_ar} لذلك التحذير قوي حتى دون تطابق عبارة حرفية."
         )
-    elif ml_available:
+    elif risk_level == "medium" and top_cats:
+        joined_en = _join_traits(traits_en, arabic=False)
+        joined_ar = _join_traits(traits_ar, arabic=True)
         reasons_en.append(
-            "The model read the text and found little that resembles typical scam wording."
+            f"The sentence {quote_en} contains {joined_en}. These are meaningful warning signs, "
+            "but the text does not contain enough strong evidence for a high-risk verdict."
         )
         reasons_ar.append(
-            "قرأ المودل النص ولم يجد الكثير مما يشبه صياغة النصب المعتادة."
+            f"الجملة {quote_ar} تحتوي {joined_ar}. هذه إشارات تحذير واضحة، لكن النص لا يحتوي "
+            "أدلة قوية كافية لاعتباره عالي الخطورة."
+        )
+    elif risk_level == "medium":
+        feature_en = f" The main model cues were {terms_en}." if terms else ""
+        feature_ar = f" أكثر العبارات تأثيراً في المودل كانت {terms_ar}." if terms else ""
+        reasons_en.append(
+            f"The sentence {quote_en} has a noticeable resemblance to scam-ad wording. "
+            f"{feature_en} The similarity is worth caution, but it is not conclusive proof of fraud."
+        )
+        reasons_ar.append(
+            f"في الجملة {quote_ar} لاحظ المودل تشابهاً ملحوظاً مع صياغة إعلانات النصب. "
+            f"{feature_ar} هذا التشابه يستدعي الحذر، لكنه ليس دليلاً قاطعاً على الاحتيال."
+        )
+    elif risk_level == "low" and top_cats:
+        joined_en = _join_traits(traits_en, arabic=False)
+        joined_ar = _join_traits(traits_ar, arabic=True)
+        reasons_en.append(
+            f"The sentence {quote_en} contains {joined_en}, but the signal is limited and may have "
+            "a legitimate explanation. The model therefore treats this as low risk, not as a scam verdict."
+        )
+        reasons_ar.append(
+            f"في الجملة {quote_ar} لاحظ المودل {joined_ar}، لكن الإشارة محدودة وقد يكون لها "
+            "تفسير طبيعي. لذلك اعتبر الخطر منخفضاً ولم يحكم بأن العرض نصب."
+        )
+    elif risk_level == "low":
+        strength_en = "weak" if final_pct < 30 else "limited"
+        strength_ar = "ضعيفاً" if final_pct < 30 else "محدوداً"
+        feature_en = (
+            f" The words or phrases that influenced it most were {terms_en}, "
+            "but each can also appear in legitimate offers."
+            if terms
+            else ""
+        )
+        feature_ar = (
+            f" أكثر الكلمات أو العبارات التي أثّرت في تقديره كانت {terms_ar}، "
+            "لكنها قد تظهر أيضاً في عروض حقيقية."
+            if terms
+            else ""
+        )
+        reasons_en.append(
+            f"In the sentence {quote_en}, the model noticed a {strength_en} and unclear pattern "
+            f"that resembles some scam ads.{feature_en} The system did not match an explicit request "
+            "for money, sensitive documents, or urgent action, so this is only a caution signal—not a scam verdict."
+            " This is why the risk remains low."
+        )
+        reasons_ar.append(
+            f"في الجملة {quote_ar} لاحظ المودل نمطاً {strength_ar} وغير واضح يشبه بعض إعلانات النصب."
+            f"{feature_ar} لم يرصد النظام عبارة صريحة تطلب المال أو المستندات الحساسة أو الاستعجال، "
+            "لذلك هذه إشارة للاحتياط فقط وليست حكماً بأن العرض نصب، ولهذا بقي مستوى الخطر منخفضاً."
+        )
+    elif top_cats:
+        joined_en = _join_traits(traits_en, arabic=False)
+        joined_ar = _join_traits(traits_ar, arabic=True)
+        reasons_en.append(
+            f"The sentence {quote_en} includes {joined_en}, but the signal is isolated and weak. "
+            "Verify the source, but there is no clear basis to label the offer a scam."
+        )
+        reasons_ar.append(
+            f"تتضمن الجملة {quote_ar} {joined_ar}، لكن الإشارة منفردة وضعيفة. "
+            "تحقّق من المصدر، فلا يوجد أساس واضح لاعتبار العرض نصباً."
         )
     else:
         reasons_en.append(
-            "The text was compared against a list of known scam warning phrases."
+            f"The model found no clear scam pattern in {quote_en}. The wording appears mostly normal; "
+            "routine source verification is still recommended."
         )
         reasons_ar.append(
-            "تمت مقارنة النص بقائمة من عبارات التحذير المعروفة في عمليات النصب."
+            f"لم يجد المودل نمط نصب واضحاً في {quote_ar}. الصياغة تبدو طبيعية في الغالب، "
+            "ويُنصح فقط بالتحقق المعتاد من المصدر."
         )
 
     # Then explain, per detected category, why that trait is dangerous.
@@ -152,12 +273,8 @@ def _build_narrative(
         reasons_en.append(f"{label_en}: {reason['en']}{example_en}.")
         reasons_ar.append(f"{label_ar}: {reason['ar']}{example_ar}.")
 
-    if not signals and ml_available and ml_probability < 0.5:
-        reasons_en.append("Still, verify the source before sending money or documents.")
-        reasons_ar.append("مع ذلك، تحقّق من المصدر قبل إرسال أي مال أو مستندات.")
-
-    summary_en = " ".join([level["en"]] + reasons_en)
-    summary_ar = " ".join([level["ar"]] + reasons_ar)
+    summary_en = " ".join(reasons_en)
+    summary_ar = " ".join(reasons_ar)
 
     return {
         "summary_en": summary_en,
@@ -247,6 +364,8 @@ def _build_breakdown(
     risk_score: float,
     risk_level: str = "safe",
     model_meta: dict[str, Any] | None = None,
+    content: str = "",
+    model_terms: list[str] | None = None,
 ) -> dict[str, Any]:
     rule_score = _rule_score(matches)
     ml_pct = round(ml_probability * 100, 1)
@@ -271,6 +390,7 @@ def _build_breakdown(
         mode = "rules_only"
 
     signals = _category_signal_strength(matches)
+    evidence = _evidence_sentence(content, matches, ml_available=ml_available)
     narrative = _build_narrative(
         risk_level=risk_level,
         final_pct=final_pct,
@@ -278,6 +398,8 @@ def _build_breakdown(
         ml_available=ml_available,
         signals=signals,
         model_meta=model_meta or {},
+        evidence_sentence=evidence,
+        model_terms=model_terms,
     )
 
     return {
@@ -292,6 +414,8 @@ def _build_breakdown(
         "formula_en": formula_en,
         "formula_ar": formula_ar,
         "signals": signals,
+        "evidence_sentence": evidence,
+        "model_terms": model_terms or [],
         "summary_en": narrative["summary_en"],
         "summary_ar": narrative["summary_ar"],
         "reasons_en": narrative["reasons_en"],
@@ -356,6 +480,7 @@ async def analyze_job_text(
     ml = predict_scam_probability(content)
     ml_prob = float(ml["probability"])
     ml_available = bool(ml["available"])
+    model_terms = explain_scam_features(content) if ml_available else []
 
     risk_score, flags, risk_level = _combine_scores(
         ml_probability=ml_prob,
@@ -386,6 +511,8 @@ async def analyze_job_text(
         risk_score=risk_score,
         risk_level=risk_level,
         model_meta=model_meta,
+        content=content,
+        model_terms=model_terms,
     )
 
     return {
